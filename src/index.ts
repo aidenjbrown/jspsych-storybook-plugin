@@ -275,7 +275,7 @@ class StorybookPlugin implements JsPsychPlugin<Info> {
     const OUTER   = 30;
     const GAP     = 18;
     const PITCH   = OUTER * 2 + GAP;
-    const BAR_Y   = this.app.screen.height - 80;
+    const BAR_Y   = 80;
     const totalW  = totalPages * PITCH - GAP;
     const startX  = this.app.screen.width / 2 - totalW / 2;
 
