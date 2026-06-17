@@ -337,6 +337,7 @@ const info = <const>{
       const img = document.createElement("img");
       img.src = image.src;
       img.id = `jspsych-storybook-image-${image.id}`;
+      img.dataset.imageId = image.id;  // for reference in highlights and animations
       img.style.position = "absolute";
       img.style.left = `${image.x_pos}%`;
       img.style.top = `${image.y_pos}%`;
