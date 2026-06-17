@@ -337,14 +337,7 @@ class StorybookPlugin implements JsPsychPlugin<Info> {
     document.head.appendChild(style);
   }
 
-  trial(display_element: HTMLElement, trial: TrialType<Info>) {
-    if (trial.show_progress_bar) {
-      this.renderProgressBar(display_element, trial.total_pages, trial.pages_completed, trial.celebration_sound);
-    }
-
-    this.injectAnimationStyles();
-
-    // Image rendering
+  private renderImages(display_element: HTMLElement, trial: TrialType<Info>): Record<string, HTMLImageElement> {
     const imageElements: Record<string, HTMLImageElement> = {};
     for (const img of trial.images ?? []) {
       const el = document.createElement('img');
@@ -382,8 +375,10 @@ class StorybookPlugin implements JsPsychPlugin<Info> {
         }, img.time_offset);
       }
     }
+    return imageElements;
+  }
 
-    // Animations
+  private applyAnimations(trial: TrialType<Info>, imageElements: Record<string, HTMLImageElement>): void {
     for (const anim of trial.animations ?? []) {
       const apply = () => {
         const el = imageElements[anim.image_id];
@@ -420,6 +415,17 @@ class StorybookPlugin implements JsPsychPlugin<Info> {
         apply();
       }
     }
+  }
+
+  trial(display_element: HTMLElement, trial: TrialType<Info>) {
+    if (trial.show_progress_bar) {
+      this.renderProgressBar(display_element, trial.total_pages, trial.pages_completed, trial.celebration_sound);
+    }
+
+    this.injectAnimationStyles();
+
+    const imageElements = this.renderImages(display_element, trial);
+    this.applyAnimations(trial, imageElements);
 
     // Audio playback
     for (const aud of trial.audio ?? []) {
