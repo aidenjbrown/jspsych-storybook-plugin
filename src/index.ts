@@ -430,34 +430,28 @@ const info = <const>{
   }
 
   private highlight = () => {
+    this.params.highlight?.map((obj: TrialType.highlight) => {
+      // literally have no idea if the typing for obj matters or works, but typescript got mad at me otherwise
+      const img = this.display.querySelector<HTMLImageElement>(`#${obj.image_id}`);
 
-    var img = this.display.querySelector<HTMLImageElement>('#highlight');
-    
-    if (this.params.highlight[0].time_onset > 0) {
-      this.jsPsych.pluginAPI.setTimeout(() => {
-        if (img) {
-          img.style.border = "5px solid green"
-        }
-        if (this.params.highlight[0].time_offset > 0) {
-          this.jsPsych.pluginAPI.setTimeout(() => {
-            if (img) {
-              img.removeAttribute('style')
-            }
-          }, this.params.highlight[0].time_offset);
-        };
-      }, this.params.highlight[0].time_onset);
-    } else {
-      if (this.params.highlight[0].time_offset > 0) {
+      if (obj.time_onset > 0) {
         this.jsPsych.pluginAPI.setTimeout(() => {
-          if (img) {
-            img.removeAttribute('style')
-          }
-        }, this.params.highlight[0].time_offset);
+          img!.style.border = "5px solid green"
+          if (obj.time_offset > 0) {
+            this.jsPsych.pluginAPI.setTimeout(() => {
+                img!.removeAttribute('style')
+              }, obj.time_offset);
+          };
+        }, obj.time_onset);
+      } else {
+        if (obj.time_offset > 0) {
+          this.jsPsych.pluginAPI.setTimeout(() => {
+              img!.removeAttribute('style')
+            }, obj.time_offset);
+        };
+        img!.style.border = "5px solid green"
       };
-      if (img) {
-          img.style.border = "5px solid green"
-      }
-    };
+    });
   }
 
   // bring a clip to the front: stop whatever is currently playing so only one
