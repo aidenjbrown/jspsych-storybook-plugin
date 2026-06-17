@@ -118,4 +118,30 @@ describe("extension-animations (canvas mode)", () => {
       opacity: 1,
     });
   });
+
+  it("lets a later animation on the same image fully replace an earlier, still-running one", async () => {
+    const { jsPsych } = await run([
+      withAnimations(
+        [
+          { image_id: "bunny", type: "wiggle", duration: 1000, time_onset: 0 },
+          { image_id: "bunny", type: "bounce", duration: 500, time_onset: 200 },
+        ],
+        "canvas"
+      ),
+    ]);
+
+    const extension = jsPsych.extensions["storybook-animations"] as InstanceType<
+      typeof jsPsychExtensionAnimations
+    >;
+
+    jest.advanceTimersByTime(100);
+    let transform = extension.getImageTransform("bunny");
+    expect(transform.rotate).not.toBe(0);
+    expect(transform.translateY).toBe(0);
+
+    jest.advanceTimersByTime(150); // 250ms elapsed: bounce has taken over from wiggle
+    transform = extension.getImageTransform("bunny");
+    expect(transform.rotate).toBe(0);
+    expect(transform.translateY).not.toBe(0);
+  });
 });
