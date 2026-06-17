@@ -141,6 +141,11 @@ const info = <const>{
           type: ParameterType.STRING,
           default: undefined,
         },
+
+        style: {
+          type: ParameterType.STRING,
+          default: '5px solid green'
+        },
         
         /** The time in milliseconds when the image should be highlighted. */
         time_onset : {
@@ -436,7 +441,7 @@ const info = <const>{
 
       if (obj.time_onset > 0) {
         this.jsPsych.pluginAPI.setTimeout(() => {
-          img!.style.border = "5px solid green"
+          img!.style.border = obj.style
           if (obj.time_offset > 0) {
             this.jsPsych.pluginAPI.setTimeout(() => {
                 img!.removeAttribute('style')
@@ -449,7 +454,7 @@ const info = <const>{
               img!.removeAttribute('style')
             }, obj.time_offset);
         };
-        img!.style.border = "5px solid green"
+        img!.style.border = obj.style
       };
     });
   }
