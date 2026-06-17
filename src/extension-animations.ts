@@ -2,15 +2,36 @@ import { JsPsych, JsPsychExtension, JsPsychExtensionInfo } from "jspsych";
 
 import { version } from "../package.json";
 
-type AnimationType = "wiggle" | "loom" | "translate" | "fadeIn" | "fadeOut" | "bounce" | "shake";
+type BuiltInAnimationType = "wiggle" | "loom" | "translate" | "fadeIn" | "fadeOut" | "bounce" | "shake";
+
+/** [percent through the animation (0-100), value at that point] */
+type Keyframe = [number, number];
+
+/**
+ * Per-property keyframe tables for a custom animation. Any `animations[]` entry whose
+ * `type` isn't one of the 7 built-ins is treated as custom: the extension interpolates
+ * each property given here, exactly like the built-ins do internally, so a custom
+ * animation gets the same easing and works in both render modes for free.
+ */
+interface CustomKeyframes {
+  rotate?: Keyframe[];
+  scale?: Keyframe[];
+  translateX?: Keyframe[];
+  translateY?: Keyframe[];
+  opacity?: Keyframe[];
+}
 
 interface AnimationSpec {
   image_id: string;
-  type: AnimationType;
+  type: BuiltInAnimationType | string;
   time_onset?: number;
   duration?: number;
   x?: number;
   y?: number;
+  /** Per-property keyframe tables for a custom (non-built-in) animation type. */
+  keyframes?: CustomKeyframes;
+  /** For a custom animation: hold the final computed value once finished, instead of reverting to identity. */
+  holds_final_state?: boolean;
 }
 
 interface AnimationsParams {
@@ -34,9 +55,6 @@ interface Transform {
 }
 
 const IDENTITY: Transform = { rotate: 0, scale: 1, translateX: 0, translateY: 0, opacity: 1 };
-
-/** [percent through the animation (0-100), value at that point] */
-type Keyframe = [number, number];
 
 const WIGGLE_ROTATE: Keyframe[] = [[0, 0], [15, -12], [30, 12], [45, -8], [60, 8], [75, -4], [90, 4], [100, 0]];
 const LOOM_SCALE: Keyframe[] = [[0, 1], [50, 1.6], [100, 1]];
@@ -86,13 +104,25 @@ function computeTransform(spec: AnimationSpec, phasePct: number): Partial<Transf
       const t = ease((phasePct - 50) / 50);
       return { translateX: x * (1 - t), translateY: y * (1 - t) };
     }
-    default:
-      return {};
+    default: {
+      if (!spec.keyframes) return {};
+      const result: Partial<Transform> = {};
+      for (const key of ["rotate", "scale", "translateX", "translateY", "opacity"] as const) {
+        const frames = spec.keyframes[key];
+        if (frames) result[key] = interpolate(phasePct, frames);
+      }
+      return result;
+    }
   }
 }
 
-/** Animation types that hold their final value once finished, instead of reverting to identity. */
-const HOLDS_FINAL_STATE: AnimationType[] = ["fadeIn", "fadeOut"];
+/** Built-in animation types that hold their final value once finished, instead of reverting to identity. */
+const HOLDS_FINAL_STATE: string[] = ["fadeIn", "fadeOut"];
+
+function holdsFinalState(spec: AnimationSpec): boolean {
+  if (HOLDS_FINAL_STATE.includes(spec.type)) return true;
+  return spec.keyframes != null && spec.holds_final_state === true;
+}
 
 function transformToCssString(t: Transform): string {
   return `rotate(${t.rotate}deg) scale(${t.scale}) translate(${t.translateX}px, ${t.translateY}px)`;
@@ -178,7 +208,7 @@ class StorybookAnimationsExtension implements JsPsychExtension {
       // Skip the motion itself, but still land on whatever end state the animation
       // would have held (e.g. a fadeOut should still end up transparent).
       const finalTransform: Transform = { ...IDENTITY, ...computeTransform(spec, 100) };
-      const resolved = HOLDS_FINAL_STATE.includes(spec.type) ? finalTransform : IDENTITY;
+      const resolved = holdsFinalState(spec) ? finalTransform : IDENTITY;
       this.current.set(spec.image_id, resolved);
       if (this.renderMode === "dom") {
         this.applyToDom(spec.image_id, resolved);
@@ -215,7 +245,7 @@ class StorybookAnimationsExtension implements JsPsychExtension {
 
       if (elapsed >= duration) {
         this.active.delete(image_id);
-        this.current.set(image_id, HOLDS_FINAL_STATE.includes(entry.spec.type) ? transform : IDENTITY);
+        this.current.set(image_id, holdsFinalState(entry.spec) ? transform : IDENTITY);
       } else {
         this.current.set(image_id, transform);
       }

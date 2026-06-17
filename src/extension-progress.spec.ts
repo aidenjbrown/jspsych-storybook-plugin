@@ -34,6 +34,29 @@ describe("extension-progress", () => {
     expect(bar.children.length).toBe(5);
   });
 
+  it("dims unfilled stars via opacity, so the fill is visible regardless of symbol type", async () => {
+    const { jsPsych } = await startTimeline(
+      [
+        {
+          ...baseTrial,
+          extensions: [
+            {
+              type: jsPsychExtensionProgress,
+              params: { show_progress_bar: true, total_pages: 3, pages_completed: 1, star_symbol: "🐰" },
+            },
+          ],
+        },
+      ],
+      { extensions: [{ type: jsPsychExtensionProgress }] }
+    );
+
+    const bar = jsPsych.getDisplayContainerElement().querySelector("#storybook-progress-bar");
+    const filled = bar.children[0] as HTMLElement;
+    const unfilled = bar.children[1] as HTMLElement;
+    expect(filled.style.opacity).toBe("1");
+    expect(unfilled.style.opacity).toBe("0.3");
+  });
+
   it("shows the celebration banner only once all pages are completed", async () => {
     const { jsPsych } = await startTimeline(
       [
@@ -67,6 +90,82 @@ describe("extension-progress", () => {
 
     const container = jsPsych.getDisplayContainerElement();
     expect(container.querySelector("#storybook-progress-bar")).toBeNull();
+  });
+});
+
+describe("extension-progress appearance customization", () => {
+  it("uses the given star_symbol and star_color instead of the defaults", async () => {
+    const { jsPsych } = await startTimeline(
+      [
+        {
+          ...baseTrial,
+          extensions: [
+            {
+              type: jsPsychExtensionProgress,
+              params: {
+                show_progress_bar: true,
+                total_pages: 2,
+                pages_completed: 1,
+                star_symbol: "🌙",
+                star_color: "rgb(100, 100, 255)",
+              },
+            },
+          ],
+        },
+      ],
+      { extensions: [{ type: jsPsychExtensionProgress }] }
+    );
+
+    const bar = jsPsych.getDisplayContainerElement().querySelector("#storybook-progress-bar");
+    const filledStar = bar.children[0] as HTMLElement;
+    expect(filledStar.textContent).toBe("🌙");
+    expect(filledStar.style.color).toBe("rgb(100, 100, 255)");
+  });
+
+  it("scales star size, spacing, and outline together", async () => {
+    const { jsPsych } = await startTimeline(
+      [
+        {
+          ...baseTrial,
+          extensions: [
+            {
+              type: jsPsychExtensionProgress,
+              params: { show_progress_bar: true, total_pages: 1, pages_completed: 0, star_size: 60 },
+            },
+          ],
+        },
+      ],
+      { extensions: [{ type: jsPsychExtensionProgress }] }
+    );
+
+    const bar = jsPsych.getDisplayContainerElement().querySelector("#storybook-progress-bar") as HTMLElement;
+    const star = bar.children[0] as HTMLElement;
+    expect(star.style.fontSize).toBe("60px");
+  });
+
+  it("uses the given celebration_message instead of the default", async () => {
+    const { jsPsych } = await startTimeline(
+      [
+        {
+          ...baseTrial,
+          extensions: [
+            {
+              type: jsPsychExtensionProgress,
+              params: {
+                show_progress_bar: true,
+                total_pages: 1,
+                pages_completed: 1,
+                celebration_message: "All done, nice work!",
+              },
+            },
+          ],
+        },
+      ],
+      { extensions: [{ type: jsPsychExtensionProgress }] }
+    );
+
+    const banner = jsPsych.getDisplayContainerElement().querySelector("#storybook-celebration-banner");
+    expect(banner.textContent).toBe("All done, nice work!");
   });
 });
 

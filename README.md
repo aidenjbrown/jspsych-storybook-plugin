@@ -53,12 +53,16 @@ const trial = {
 };
 ```
 
-| Param                | Type            | Default | Description |
-| --------------------- | --------------- | ------- | ----------- |
-| `show_progress_bar`   | boolean         | `false` | Whether to render the star bar for this trial. |
-| `total_pages`         | int             | `1`     | Total number of stars in the bar. |
-| `pages_completed`     | int             | `0`     | How many stars are filled in. Once this reaches `total_pages`, the celebration banner and confetti cannon fire. |
-| `celebration_sound`   | string \| null  | `null`  | Path to an audio file to play alongside the celebration banner. |
+| Param                  | Type            | Default              | Description |
+| ----------------------- | --------------- | -------------------- | ----------- |
+| `show_progress_bar`     | boolean         | `false`               | Whether to render the star bar for this trial. |
+| `total_pages`           | int             | `1`                   | Total number of stars in the bar. |
+| `pages_completed`       | int             | `0`                   | How many stars are filled in. Once this reaches `total_pages`, the celebration banner and confetti cannon fire. |
+| `celebration_sound`     | string \| null  | `null`                | Path to an audio file to play alongside the celebration banner. |
+| `celebration_message`   | string          | `'⭐  Great job!  ⭐'` | Text shown in the celebration banner. |
+| `star_symbol`           | string          | `'★'`                 | Character used for each star. |
+| `star_color`            | string          | `'#FFD700'`           | CSS color for a filled star and the celebration text. |
+| `star_size`             | int             | `38`                  | Font size of each star, in pixels. Spacing and outline thickness scale with it. |
 
 Confetti requires [canvas-confetti](https://www.npmjs.com/package/canvas-confetti)
 to be loaded separately (e.g. via CDN `<script>` tag); the extension degrades
@@ -102,13 +106,40 @@ const trial = {
 };
 ```
 
-| Animation param | Type   | Default | Description |
-| ---------------- | ------ | ------- | ----------- |
-| `image_id`        | string | —       | Must match the `id` of an image in the trial's `images` array. |
-| `type`             | string | —       | One of `wiggle`, `loom`, `translate`, `fadeIn`, `fadeOut`, `bounce`, `shake`. |
-| `time_onset`       | int    | `0`     | Milliseconds to wait before the animation starts. |
-| `duration`         | int    | `1000`  | How long the animation runs, in milliseconds. |
-| `x`, `y`           | int    | `0`     | Pixel offset for the `translate` animation only. |
+| Animation param      | Type   | Default | Description |
+| --------------------- | ------ | ------- | ----------- |
+| `image_id`             | string | —       | Must match the `id` of an image in the trial's `images` array. |
+| `type`                  | string | —       | One of the 7 built-ins (`wiggle`, `loom`, `translate`, `fadeIn`, `fadeOut`, `bounce`, `shake`), or any custom name paired with `keyframes`. |
+| `time_onset`            | int    | `0`     | Milliseconds to wait before the animation starts. |
+| `duration`              | int    | `1000`  | How long the animation runs, in milliseconds. |
+| `x`, `y`                | int    | `0`     | Pixel offset for the `translate` animation only. |
+| `keyframes`             | object | —       | Custom (non-built-in) animation definition. See below. |
+| `holds_final_state`     | boolean| `false` | For a custom animation: hold the final computed value once finished, instead of reverting to identity. |
+
+#### Custom animations
+
+Any `type` that isn't one of the 7 built-ins is treated as custom: provide a
+`keyframes` object with per-property tables in the same `[percent, value]`
+format the built-ins use internally, and the extension interpolates them with
+the same easing — in both render modes, for free.
+
+```js
+{
+  image_id: 'bunny',
+  type: 'pulse',          // any name you like
+  duration: 800,
+  keyframes: {
+    scale: [[0, 1], [50, 1.5], [100, 1]],
+  },
+}
+```
+
+Available properties: `rotate` (degrees), `scale`, `translateX`/`translateY`
+(pixels), `opacity`. Any property left out stays at its identity value
+(`rotate: 0`, `scale: 1`, `translateX`/`translateY: 0`, `opacity: 1`) for that
+animation. Set `holds_final_state: true` if the animation should stay at its
+last computed value instead of reverting once it finishes (this is how the
+built-in `fadeIn`/`fadeOut` behave).
 
 For canvas mode, the per-frame transform returned by `getImageTransform(image_id)`
 looks like:

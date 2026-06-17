@@ -168,6 +168,108 @@ describe("extension-animations (canvas mode)", () => {
   });
 });
 
+describe("extension-animations custom (non-built-in) animation types", () => {
+  it("interpolates a custom keyframe table for a non-built-in type", async () => {
+    const { jsPsych } = await run([
+      withAnimations(
+        [
+          {
+            image_id: "bunny",
+            type: "pulse",
+            duration: 1000,
+            time_onset: 0,
+            keyframes: { scale: [[0, 1], [50, 1.5], [100, 1]] },
+          },
+        ],
+        "canvas"
+      ),
+    ]);
+
+    const extension = jsPsych.extensions["storybook-animations"] as InstanceType<
+      typeof jsPsychExtensionAnimations
+    >;
+
+    jest.advanceTimersByTime(500); // halfway through, near the peak of the pulse
+    expect(extension.getImageTransform("bunny").scale).toBeGreaterThan(1.4);
+  });
+
+  it("reverts a custom animation to identity once finished by default", async () => {
+    const { jsPsych } = await run([
+      withAnimations(
+        [
+          {
+            image_id: "bunny",
+            type: "pulse",
+            duration: 500,
+            time_onset: 0,
+            keyframes: { scale: [[0, 1], [100, 2]] },
+          },
+        ],
+        "canvas"
+      ),
+    ]);
+
+    const extension = jsPsych.extensions["storybook-animations"] as InstanceType<
+      typeof jsPsychExtensionAnimations
+    >;
+
+    jest.advanceTimersByTime(600);
+    expect(extension.getImageTransform("bunny").scale).toBe(1);
+  });
+
+  it("holds a custom animation's final value when holds_final_state is true", async () => {
+    const { jsPsych } = await run([
+      withAnimations(
+        [
+          {
+            image_id: "bunny",
+            type: "tint-out",
+            duration: 500,
+            time_onset: 0,
+            holds_final_state: true,
+            keyframes: { opacity: [[0, 1], [100, 0.2]] },
+          },
+        ],
+        "canvas"
+      ),
+    ]);
+
+    const extension = jsPsych.extensions["storybook-animations"] as InstanceType<
+      typeof jsPsychExtensionAnimations
+    >;
+
+    jest.advanceTimersByTime(600);
+    expect(extension.getImageTransform("bunny").opacity).toBeCloseTo(0.2);
+  });
+
+  it("treats properties left out of the custom keyframes as identity", async () => {
+    const { jsPsych } = await run([
+      withAnimations(
+        [
+          {
+            image_id: "bunny",
+            type: "pulse",
+            duration: 1000,
+            time_onset: 0,
+            keyframes: { scale: [[0, 1], [50, 1.5], [100, 1]] },
+          },
+        ],
+        "canvas"
+      ),
+    ]);
+
+    const extension = jsPsych.extensions["storybook-animations"] as InstanceType<
+      typeof jsPsychExtensionAnimations
+    >;
+
+    jest.advanceTimersByTime(500);
+    const transform = extension.getImageTransform("bunny");
+    expect(transform.rotate).toBe(0);
+    expect(transform.translateX).toBe(0);
+    expect(transform.translateY).toBe(0);
+  });
+});
+
 describe("extension-animations across multiple trials", () => {
   it("resets animation state between trials, even if the prior trial's animation never finished", async () => {
     const { jsPsych, displayElement } = await run([

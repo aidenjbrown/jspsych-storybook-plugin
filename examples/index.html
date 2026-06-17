@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>plugin-storybook Example</title>
   <script src="https://unpkg.com/jspsych@8.0.0"></script>
   <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.0.0"></script>
@@ -85,7 +86,10 @@
       audio:      [{ src: 'sound/chimes.mp3', time_onset: 200 }],
       highlight:  [],
       animations: [{ image_id: 'bunny', type: 'wiggle', duration: 800, time_onset: 200 },
-                   { image_id: 'bunny', type: 'loom',   duration: 800, time_onset: 1200 }],
+                   { image_id: 'bunny', type: 'loom',   duration: 800, time_onset: 1200 },
+                   // Custom animation: not one of the 7 built-ins, defined inline via keyframes.
+                   { image_id: 'bunny', type: 'pulse', duration: 700, time_onset: 2100,
+                     keyframes: { scale: [[0, 1], [50, 1.4], [100, 1]] } }],
     },
   ];
 
@@ -98,10 +102,13 @@
       {
         type: jsPsychExtensionProgress,
         params: {
-          show_progress_bar: true,
-          total_pages:       TOTAL_PAGES,
-          pages_completed:   i + 1,
-          celebration_sound: i + 1 >= TOTAL_PAGES ? 'sound/tada.mp3' : null,
+          show_progress_bar:   true,
+          total_pages:         TOTAL_PAGES,
+          pages_completed:     i + 1,
+          celebration_sound:   i + 1 >= TOTAL_PAGES ? 'sound/tada.mp3' : null,
+          celebration_message: 'The bunny says thank you for listening!',
+          star_symbol:         '🐰',
+          star_color:          '#FFB3D9',
         },
       },
       {

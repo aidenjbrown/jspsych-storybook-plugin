@@ -11,6 +11,14 @@ interface ProgressParams {
   total_pages?: number;
   pages_completed?: number;
   celebration_sound?: string | null;
+  /** Text shown in the celebration banner once all pages are completed. */
+  celebration_message?: string;
+  /** Character used for each star in the progress bar. */
+  star_symbol?: string;
+  /** CSS color for a filled star (and the celebration banner text). */
+  star_color?: string;
+  /** Font size of each star, in pixels. Spacing and outline thickness scale with this. */
+  star_size?: number;
 }
 
 /**
@@ -41,6 +49,10 @@ class StorybookProgressExtension implements JsPsychExtension {
       total_pages = 1,
       pages_completed = 0,
       celebration_sound = null,
+      celebration_message = '⭐  Great job!  ⭐',
+      star_symbol = '★',
+      star_color = '#FFD700',
+      star_size = 38,
     } = params;
 
     const container = this.jsPsych.getDisplayContainerElement();
@@ -48,7 +60,12 @@ class StorybookProgressExtension implements JsPsychExtension {
     container.querySelector('#storybook-celebration-banner')?.remove();
 
     if (show_progress_bar) {
-      this.renderProgressBar(container, total_pages, pages_completed, celebration_sound);
+      this.renderProgressBar(container, total_pages, pages_completed, celebration_sound, {
+        celebration_message,
+        star_symbol,
+        star_color,
+        star_size,
+      });
     }
   }
 
@@ -72,8 +89,12 @@ class StorybookProgressExtension implements JsPsychExtension {
     container: HTMLElement,
     totalPages: number,
     pagesCompleted: number,
-    celebrationSound: string | null
+    celebrationSound: string | null,
+    appearance: { celebration_message: string; star_symbol: string; star_color: string; star_size: number }
   ): void {
+    const { celebration_message, star_symbol, star_color, star_size } = appearance;
+    const starGap = star_size * 0.37;
+    const starStroke = Math.max(1.5, star_size * 0.065);
     if (!document.getElementById('storybook-star-keyframes')) {
       const style = document.createElement('style');
       style.id = 'storybook-star-keyframes';
@@ -98,17 +119,18 @@ class StorybookProgressExtension implements JsPsychExtension {
     bar.id = 'storybook-progress-bar';
     bar.style.cssText = `
       position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 14px; z-index: 100;
+      display: flex; gap: ${starGap}px; z-index: 100;
     `;
 
     for (let i = 0; i < totalPages; i++) {
       const star = document.createElement('span');
-      star.textContent = '★';
+      star.textContent = star_symbol;
       const isNew = i === pagesCompleted - 1;
       star.style.cssText = `
-        font-size: 38px; line-height: 1; display: inline-block;
-        color: ${i < pagesCompleted ? '#FFD700' : 'transparent'};
-        -webkit-text-stroke: 2.5px #FFD700;
+        font-size: ${star_size}px; line-height: 1; display: inline-block;
+        color: ${i < pagesCompleted ? star_color : 'transparent'};
+        -webkit-text-stroke: ${starStroke}px ${star_color};
+        opacity: ${i < pagesCompleted ? 1 : 0.3};
         ${isNew && !reduceMotion ? 'animation: storybook-star-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;' : ''}
       `;
       bar.appendChild(star);
@@ -119,17 +141,17 @@ class StorybookProgressExtension implements JsPsychExtension {
     if (pagesCompleted >= totalPages) {
       const banner = document.createElement('div');
       banner.id = 'storybook-celebration-banner';
-      banner.textContent = '⭐  Great job!  ⭐';
+      banner.textContent = celebration_message;
       banner.style.cssText = reduceMotion
         ? `
-          position: absolute; top: 68px; left: 50%; white-space: nowrap; transform: translateX(-50%);
+          position: absolute; top: ${star_size + 30}px; left: 50%; white-space: nowrap; transform: translateX(-50%);
           font-size: 26px; font-family: Georgia, serif; font-weight: bold;
-          color: #FFD700; z-index: 100; opacity: 1;
+          color: ${star_color}; z-index: 100; opacity: 1;
         `
         : `
-          position: absolute; top: 68px; left: 50%; white-space: nowrap;
+          position: absolute; top: ${star_size + 30}px; left: 50%; white-space: nowrap;
           font-size: 26px; font-family: Georgia, serif; font-weight: bold;
-          color: #FFD700; z-index: 100; opacity: 0;
+          color: ${star_color}; z-index: 100; opacity: 0;
           animation: storybook-celebrate 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
         `;
       container.appendChild(banner);
