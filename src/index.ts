@@ -25,7 +25,28 @@ const info = <const>{
       type: ParameterType.INT,
       default: null,
     },
-    
+
+    /**
+     * A manual fallback for ending the trial. Hidden by default, since trials
+     * normally end on their own (audio finishing, or -- with no audio -- the
+     * last image's duration elapsing). Show it for trials that have no audio
+     * and no image durations, since otherwise there's no way to end them.
+     */
+    end_trial_button: {
+      type: ParameterType.COMPLEX,
+      default: { button_visible: false, button_text: "Continue" },
+      nested: {
+        button_visible: {
+          type: ParameterType.BOOL,
+          default: false,
+        },
+        button_text: {
+          type: ParameterType.STRING,
+          default: "Continue",
+        },
+      },
+    },
+
     /** An array of objects. Each object represents an image that appears on the screen. Each object contains a id, src, clickable, x_pos, y_pos, width, height, time_onset, and time_offset parameter that will be applied to the question. */
     images: {
       type: ParameterType.COMPLEX,
