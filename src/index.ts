@@ -376,6 +376,7 @@ const info = <const>{
   private highlight = () => {
     this.params.highlight?.map((obj) => {
       const applyHighlight = () => {
+        
         const img = this.display.querySelector<HTMLImageElement>(
           `#jspsych-storybook-image-${obj.image_id}`
         );
